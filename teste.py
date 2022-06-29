@@ -5,7 +5,7 @@ import pygame
 pygame.init()
 
 
-def loadImage(filename: str, dimension=(50, 60), orientation=90):
+def loadImage(filename: str, dimension=(32, 32), orientation=90):
     """
     Método usado para carregar algumas imagens para o codigo.
 

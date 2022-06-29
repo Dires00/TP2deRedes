@@ -4,23 +4,22 @@ class Level(object):
     def loadMap(self, mapName="first.map", tileSet='tileset.png'):
         self.map = [[]]
         file = open(mapName)
-        i = 0
-        j = 0
+        self.height = 0
+        self.width = 0
         while True:
             tile = file.read(1)
             if tile == '':
                 break
             if tile == '\n':
                 self.map.append([])
-                i += 1
+                self.height += 1
                 continue
-            self.map[i].append(tile)
-            if i == 0:
-                j += 1
+            self.map[self.height].append(tile)
+            if self.height == 0:
+                self.width += 1
         file.close()
-        self.width = j
-        self.height = i + 1
-        return (j, i + 1)
+        self.height += 1
+        return (self.width, self.height)
     
     def loadTileTable(self, filename, width=32, height=32):
         image = pygame.image.load(filename).convert()
@@ -44,9 +43,9 @@ class Level(object):
                     screen.blit(self.tileTable[5][2], (x*32, y*32))
                 elif(tile == '<'):
                     screen.blit(self.tileTable[4][2], (x*32, y*32))
-                elif(tile == '\\'):
-                    screen.blit(self.tileTable[5][1], (x*32, y*32))
                 elif(tile == '/'):
+                    screen.blit(self.tileTable[5][1], (x*32, y*32))
+                elif(tile == '\\'):
                     screen.blit(self.tileTable[4][1], (x*32, y*32))
                 elif(tile == '('):
                     screen.blit(self.tileTable[4][0], (x*32, y*32))
