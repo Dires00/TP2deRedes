@@ -1,7 +1,9 @@
-from tanque import Tank
+from turtle import position
+from src.bulletFactory import BulletFactory
+from src.tank import Tank
 import pygame
 import pygame.locals
-from map_def import Level
+from src.map_def import Level
 
 def loadImage(filename: str, dimension=(50, 60), orientation=90):
     """
@@ -28,16 +30,16 @@ if __name__=='__main__':
     width, height = level.loadMap()
     screen = pygame.display.set_mode((width*32, height*32))
     screen.fill((255, 255, 255))
-    level.loadTileTable('images/tileset.png')
+    level.loadTileTable('./src/images/tileset.png')
     level.render(screen)
-
+    bulletFactory = BulletFactory()
     tanqueAzul = Tank()
-    tanqueAzul.loadTank('./images/tanqueazul.png', width*32-64, height*32/2, orientation=90)
+    tanqueAzul.loadTank('./src/images/tanqueazul.png', width*32-64, height*32/2, orientation=90)
     tanqueAzul.render(screen)
     
 #6r5tu6yiu8y7uyrte
     tanqueVermelho = Tank()
-    tanqueVermelho.loadTank('./images/tanquevermelho.png', 64, height*16, orientation=270)
+    tanqueVermelho.loadTank('./src/images/tanquevermelho.png', 64, height*16, orientation=270)
     tanqueVermelho.render(screen)
     """
     Carrega as images e geram os tanques
@@ -50,6 +52,7 @@ if __name__=='__main__':
     pygame.display.flip()
     run = True
     while run:
+        oldPosition = tanqueAzul.getPosition()
         pygame.time.delay(75)
 
         for event in pygame.event.get():
@@ -64,11 +67,19 @@ if __name__=='__main__':
             tanqueAzul.rotateRight()
 
         if keys[pygame.K_UP]:
-            pass
+            tanqueAzul.moveFoward(level)
+
+        if keys[pygame.K_DOWN]:
+            tanqueAzul.moveBackward(level)
+
+        if keys[pygame.K_RSHIFT]:
+            tanqueAzul.shoot(bulletFactory)
 
         level.render(screen)
+        newPosition = tanqueAzul.getPosition()
         tanqueAzul.render(screen)
         tanqueVermelho.render(screen)
+        bulletFactory.renderBullets(screen, level, (tanqueAzul, tanqueVermelho))
         pygame.display.update()
 
     

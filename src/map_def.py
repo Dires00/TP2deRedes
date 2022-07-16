@@ -1,7 +1,7 @@
 import pygame
-
+from time import sleep
 class Level(object):
-    def loadMap(self, mapName="first.map", tileSet='tileset.png'):
+    def loadMap(self, mapName="./src/maps/first.map", tileSet='./src/maps/tileset.png'):
         self.map = [[]]
         file = open(mapName)
         self.height = 0
@@ -67,3 +67,11 @@ class Level(object):
             return self.key[char]
         except KeyError:
             return {}
+
+    def verifyCollision(self, x, y):
+        tilex = int(x//32) 
+        tiley = int(y//32) 
+
+        if self.map[tiley][tilex] != '.' and self.map[tiley][tilex] != '#':
+            return True
+        return False
