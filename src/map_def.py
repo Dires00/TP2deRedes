@@ -1,7 +1,8 @@
 import pygame
 from time import sleep
 class Level(object):
-    def loadMap(self, mapName="./src/maps/first.map", tileSet='./src/maps/tileset.png'):
+    def loadMap(self, mapName="first.map"):
+        mapName = "./src/maps/" + mapName
         self.map = [[]]
         file = open(mapName)
         self.height = 0

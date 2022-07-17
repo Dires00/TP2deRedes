@@ -21,6 +21,9 @@ class Tank():
         self.y = y
         self.alive = True
 
+    def isAlive(self):
+        return self.alive
+    
     def getPosition(self):
         return [self.x, self.y, self.orientation]
     
@@ -32,8 +35,15 @@ class Tank():
     def getHp(self):
         return self.hp
 
-    def reset(self):
-        self.x, self.y, self.orientation = self.inicialPosition
+    def getInicialPosition(self):
+        return self.inicialPosition
+
+    def reset(self, inicialPosition=-1):
+        if inicialPosition == -1:
+            inicialPosition = self.inicialPosition
+        else:
+            self.inicialPosition = inicialPosition
+        self.x, self.y, self.orientation = inicialPosition
         self.alive = True
         if self.hp == 0:
             return False
