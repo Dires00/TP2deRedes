@@ -1,13 +1,13 @@
-from turtle import position
 import pygame
 from math import sin, cos, radians
 
 
 class Bullet:
-    def __init__(self, x, y, orientation):
+    def __init__(self, x, y, orientation, tank):
         self.x = x
         self.y = y
         self.orientation = orientation
+        self.tank = tank
         self.updatePosition(22)
 
     def render(self, screen: pygame.Surface):
@@ -24,11 +24,14 @@ class Bullet:
             
     def verifyKill(self, tanks):
         for tank in tanks:
-            positionx, positiony = tank.getPosition()
+            if not tank is self.tank:
+                return tank.verifyDeath(self.x, self.y)
+                
+            """positionx, positiony = tank.getPosition()
             position = (positionx//32, positiony//32)
             if position == (self.x//32, self.y//32):
                 print('MORTE')
-                return True
+                return True"""
         return False
 
     def verifications(self, level, tanks):

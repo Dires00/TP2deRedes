@@ -1,59 +1,65 @@
-from turtle import position
+from src.scoreBoard import ScoreBoard
 from src.bulletFactory import BulletFactory
 from src.tank import Tank
-import pygame
-import pygame.locals
+import pygame, sys, pickle
 from src.map_def import Level
+from socket import *
+from struct import *
+import time
 
-def loadImage(filename: str, dimension=(50, 60), orientation=90):
-    """
-    Método usado para carregar algumas imagens para o codigo.
+class Client():
+    def __init__(self, serverName: str, serverPort: int):
+        self.clientSocket = socket(AF_INET, SOCK_STREAM)
+        self.clientSocket.connect((serverName, serverPort))
 
-    filename: nome do arquivo que será carregado
-    dimension: dimensão que o arquivo será carregado (largura, altura)
-    orientation: rotação da imagem
-    return: retorna a imagem carregada
-    """
-    image = pygame.image.load(filename)
-    image = pygame.transform.scale(image, dimension)
-    image = pygame.transform.rotate(image, orientation)
-    return image
+    def send(self, message):
+        message = pickle.dumps(message)
+        self.clientSocket.send(message)
 
-def rotCenter(image, ang: int, x: int, y: int):
-    rotateImage = pygame.transform.rotate(image, ang)
-    new_rect = rotateImage.get_rect(center = image.get_rect(center = (x, y)).center )
-    return rotateImage, new_rect
-
-if __name__=='__main__':
+    def recv(self):
+        message = self.clientSocket.recv(2048)
+        return pickle.loads(message)
+        
+def main(args):
+    client = Client(args[1], int(args[2]))
+    
     pygame.init()
     level = Level()
     width, height = level.loadMap()
-    screen = pygame.display.set_mode((width*32, height*32))
-    screen.fill((255, 255, 255))
+    screen = pygame.display.set_mode((width*32, height*32+64))
+    scoreBoard = ScoreBoard()
+    screen.fill((0, 0, 0))
     level.loadTileTable('./src/images/tileset.png')
     level.render(screen)
+
     bulletFactory = BulletFactory()
-    tanqueAzul = Tank()
-    tanqueAzul.loadTank('./src/images/tanqueazul.png', width*32-64, height*32/2, orientation=90)
+    client.send('Hello!')
+    scoreBoard.loading(screen)
+    pygame.display.update()
+    player = client.recv()
+
+    tanqueAzul = Tank('./src/images/tanqueazul.png', width*32-64, height*32/2, orientation=90)
     tanqueAzul.render(screen)
     
-#6r5tu6yiu8y7uyrte
-    tanqueVermelho = Tank()
-    tanqueVermelho.loadTank('./src/images/tanquevermelho.png', 64, height*16, orientation=270)
+    tanqueVermelho = Tank('./src/images/tanquevermelho.png', 64, height*16, orientation=270)
     tanqueVermelho.render(screen)
-    """
-    Carrega as images e geram os tanques
-    """
+    scoreBoard.render(tanqueVermelho, tanqueAzul, screen)
 
-    #screen.blit(tanqueAzul, (width*32-64, height*16-tanqueAzul.get_height()/2) )  
-    """
-    Coloca os tanques na tela, nas posições passadas como parametros
-    """
+    if player == 0:
+        myTank = tanqueAzul
+        enemyTank = tanqueVermelho
+    else:
+        myTank = tanqueVermelho
+        enemyTank = tanqueAzul
+
     pygame.display.flip()
     run = True
     while run:
-        oldPosition = tanqueAzul.getPosition()
+        kill = False
+        death = False
+        shot = False
         pygame.time.delay(75)
+        
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -61,53 +67,61 @@ if __name__=='__main__':
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
-            tanqueAzul.rotateLeft()
+            myTank.rotateLeft()
 
         if keys[pygame.K_RIGHT]:
-            tanqueAzul.rotateRight()
+            myTank.rotateRight()
 
         if keys[pygame.K_UP]:
-            tanqueAzul.moveFoward(level)
+            myTank.moveFoward(level)
 
         if keys[pygame.K_DOWN]:
-            tanqueAzul.moveBackward(level)
+            myTank.moveBackward(level)
 
         if keys[pygame.K_RSHIFT]:
-            tanqueAzul.shoot(bulletFactory)
+            shot = myTank.shoot(bulletFactory)
 
+        screen.fill((0, 0, 0))
         level.render(screen)
-        newPosition = tanqueAzul.getPosition()
-        tanqueAzul.render(screen)
-        tanqueVermelho.render(screen)
-        bulletFactory.renderBullets(screen, level, (tanqueAzul, tanqueVermelho))
+
+        death = myTank.render(screen)
+        kill = enemyTank.render(screen)
+        scoreBoard.render(tanqueVermelho.getHp(), tanqueAzul.getHp(), screen)
+        
+        bulletFactory.renderBullets(screen, level, (myTank, enemyTank))
+        
+        if kill:
+            myTank.reset()
+            run = enemyTank.reset()
+            bulletFactory.reset()
+        
+        elif death:
+            run = myTank.reset()
+            enemyTank.reset()
+            bulletFactory.reset()
+
+        position = myTank.getPosition()
+        message = position
+        message.append(shot)
+        client.send(message)
+
+        message = client.recv()
+        position = message[:3]
+        shot = message[3]
+
+        enemyTank.setPosition(position)
+
+        if shot:
+            enemyTank.shoot(bulletFactory)
+
         pygame.display.update()
 
-    
-    """
-    game_over = False
-    while not game_over:
-        pygame.time.delay(100)
-        pressed_key = pygame.key.get_pressed()
-        for event in pygame.event.get():
-            if event.type == pygame.locals.QUIT:
-                game_over = True
-            
-            
-            elif event.type == pygame.locals.KEYDOWN:
-                pressed_key = pygame.key.get_pressed()
+    if myTank.getHp() > 0:
+        scoreBoard.youWin(screen)
+    else:
+        scoreBoard.youLose(screen)
+    pygame.display.update()
 
-        if pressed_key[pygame.K_LEFT]:
-            print('Vai para a esquerda')
-            orin += 45
-            width -= 45
-            tanqueAzul =  pygame.transform.rotate(tanqueAzul, orin)
-            #level.render(screen)
-            screen.blit(tanqueAzul, (width*32/2, height*16))
-            tanqueAzul.scroll(-100, -100)
-            pygame.display.flip()
-                    
-    """
-    
-
-    while pygame.event.wait().type != pygame.locals.QUIT:
-        pass
+    time.sleep(6)
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

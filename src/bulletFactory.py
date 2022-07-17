@@ -7,8 +7,11 @@ class BulletFactory:
     def __init__(self):
         self.bullets = []
 
-    def makeBullet(self, x, y, orientation):
-        self.bullets.append(Bullet(x, y, orientation))
+    def makeBullet(self, x, y, orientation, tank):
+        bullet = Bullet(x, y, orientation, tank)
+        self.bullets.append(bullet)
+        return True
+        
 
     def renderBullets(self, screen: Surface, level, tanks: tuple):
         ex_bullets = []
@@ -21,3 +24,10 @@ class BulletFactory:
 
         for bullet in ex_bullets:
            self.bullets.remove(bullet)
+           del bullet
+    
+    def reset(self):
+        for bullet in self.bullets:
+            self.bullets.remove(bullet)
+            del bullet
+        
