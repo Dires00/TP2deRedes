@@ -25,13 +25,8 @@ class Bullet:
     def verifyKill(self, tanks):
         for tank in tanks:
             if not tank is self.tank:
-                return tank.verifyDeath(self.x, self.y)
-                
-            """positionx, positiony = tank.getPosition()
-            position = (positionx//32, positiony//32)
-            if position == (self.x//32, self.y//32):
-                print('MORTE')
-                return True"""
+                if tank.verifyDeath(self.x, self.y):
+                    return True
         return False
 
     def verifications(self, level, tanks):

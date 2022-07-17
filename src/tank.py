@@ -46,6 +46,7 @@ class Tank():
         self.x, self.y, self.orientation = inicialPosition
         self.alive = True
         if self.hp == 0:
+            self.alive = False
             return False
         return True
 

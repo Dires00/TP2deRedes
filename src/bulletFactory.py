@@ -13,7 +13,7 @@ class BulletFactory:
         return True
         
 
-    def renderBullets(self, screen: Surface, level, tanks: tuple):
+    def renderBullets(self, screen: Surface, level, tanks):
         ex_bullets = []
         for bullet in self.bullets:
             bullet.updatePosition()
