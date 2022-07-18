@@ -295,9 +295,6 @@ def main(args):
                     else:
                         tank.reset(auxPosition)
             
-                for tank in tanks:
-                    print(tank.getInicialPosition())
-
             position = tanks[player].getPosition()
             message = position
             message.append(shot)

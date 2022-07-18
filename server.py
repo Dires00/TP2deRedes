@@ -22,14 +22,15 @@ class Server():
     
     def accept(self):
         """Método em que o servidor aceita o cliente e cria uma thread para o mesmo"""
+        print(f'Esperando o 1º cliente ')
         for i in range(4):
-            print(f'Esperando o {i+1}º cliente ')
             if i > 1:
                 while self.choice == -1:
                     time.sleep(0.5)
                 if self.choice != 2:
                     break
             self.players.append(self.serverSocket.accept())
+            print(f'Esperando o {i+2}º cliente ')
             if i == 0:
                 t =threading.Thread(target=self.mapChoice, args=(self.players[i][0], ))
                 t.start()
@@ -44,7 +45,6 @@ class Server():
         flag = True
         while flag:
             time.sleep(1)
-            print(self.playerPosition)
             flag = False
             for thread in self.threads:
                 if thread.is_alive():
@@ -84,7 +84,6 @@ class Server():
                 if position[0] == -1:
                     break
 
-                print(position[indice])
                 self.playerPosition[indice] = position[indice][:]
     
                 if shot:
@@ -95,7 +94,6 @@ class Server():
                 message = []
                 for i in range(4):
                     aux = self.playerPosition[i][:]
-                    print(f'aux - {aux}')
                     if self.newShot[i]:
                         if time.time() - self.shots[i] > 1:
                             self.shots[i] = 0
