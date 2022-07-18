@@ -14,13 +14,14 @@ class Server():
             [32*16, 64, 180],
             [32*16, 21*32*64, 0]
         ]
-        self.newShot = [0,0,0,0]
+        self.newShot = [False,False,False,False]
         self.players = []
         self.threads = []
         self.choice = -1
+        self.shots = [0,0,0,0]
     
     def accept(self):
-        """Método em que o servidor aceita o cliete e cria uma thread para o mesmo"""
+        """Método em que o servidor aceita o cliente e cria uma thread para o mesmo"""
         for i in range(4):
             print(f'Esperando o {i+1}º cliente ')
             if i > 1:
@@ -43,12 +44,16 @@ class Server():
         flag = True
         while flag:
             time.sleep(1)
+            print(self.playerPosition)
             flag = False
             for thread in self.threads:
                 if thread.is_alive():
                     flag = True
     
     def mapChoice(self, player: socket):
+        """
+        Função que permite o jogador 1 escolher o mapa
+        """
         self.recv(player)
         self.send(0, player)
         self.choice = self.recv(player)
@@ -62,29 +67,45 @@ class Server():
                 self.send(self.choice, player)
             else:
                 self.send(self.choice, player)
-
+            position = [[], [], [], []]
             while True:
+                
                 message = self.recv(player)
-                position = message[:3]
+                position[indice] = message[:3]
                 shot = message[3]
+                powerUp = message[4]
+                
+                
+                if indice == 0:
+                    self.powerUp = powerUp
+                else:
+                    powerUp = self.powerUp
 
                 if position[0] == -1:
                     break
 
-                self.playerPosition[indice] = position
+                print(position[indice])
+                self.playerPosition[indice] = position[indice][:]
+    
                 if shot:
-                    self.newShot[indice] = 3
+                    self.newShot[indice] = True
+                    if self.shots[indice] == 0:
+                        self.shots[indice] = time.time()
 
                 message = []
-                for i, position in enumerate(self.playerPosition):
-                    aux = position
-                    if self.newShot[i] > 0:
-                        self.newShot[i] -= 1
+                for i in range(4):
+                    aux = self.playerPosition[i][:]
+                    print(f'aux - {aux}')
+                    if self.newShot[i]:
+                        if time.time() - self.shots[i] > 1:
+                            self.shots[i] = 0
+                            self.newShot[indice] = False
                         aux += [True]
                     else:
                         aux += [False]
                     message.append(aux)
                 
+                message.append(powerUp)
                 self.send(message, player)
 
         else:
@@ -101,6 +122,7 @@ class Server():
 
                 position = message[:3]
                 shot = message[3]
+                powerUp = message[4]
 
                 if position[0] == -1:
                     break
@@ -108,9 +130,15 @@ class Server():
                 self.newShot[indice] = shot
 
                 shot = self.newShot[0 if indice == 1 else 1]
+
+                if indice == 0:
+                    self.powerUp = powerUp
+                else:
+                    powerUp = self.powerUp
+
                 message = self.playerPosition[0 if indice == 1 else 1]
                 message.append(shot)
-
+                message.append(powerUp)
                 self.send(message, player)
                 
                 if shot:
@@ -119,10 +147,16 @@ class Server():
         player.close()
         
     def send(self, message, player:socket):
+        """
+        Função que empacota a mensagem transformando em bytes(serializando) para enviar para o cliente.
+        """
         message = pickle.dumps(message)
         player.send(message)
 
     def recv(self, player:socket):
+        """
+        Função que recebe uma mensagem do cliente e desserializa a mensagem
+        """
         message = player.recv(2048)
         return pickle.loads(message)
             

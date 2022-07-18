@@ -6,12 +6,18 @@ import time
 from src.bulletFactory import BulletFactory
 
 class Tank():
+    """
+    Classe que representa um tanque de guerra
+    """
     def __init__(self, path, x, y, dimension = (48,64), orientation=0):
         self.lastShot = 0
         self.hp = 3
         self.inicialPosition = (x, y, orientation)
-        self.speed = 20
+        self.speed = 10
         self.loadTank(path, x, y, dimension, orientation)
+        self.activePowerUp = -1
+        self.powerUpTime = 0
+        self.powerUp = []
 
     def loadTank(self, path: str, x: int, y: int, dimension=(48,64), orientation=0):
         self.orientation = orientation
@@ -36,7 +42,7 @@ class Tank():
         return self.hp
 
     def getInicialPosition(self):
-        return self.inicialPosition
+        return self.inicialPosition[:]
 
     def reset(self, inicialPosition=-1):
         if inicialPosition == -1:
@@ -55,13 +61,15 @@ class Tank():
         Coloca o tanque na tela
         """
         if self.alive:
+            if self.activePowerUp != -1:
+                self.deactivatePowerUp()
             image, self.rect = self.rotCenter(self.image, self.orientation, self.x, self.y)
             screen.blit(image, self.rect)
         
         return not self.alive
 
     def verifyDeath(self, x, y):
-        if self.rect.collidepoint(x, y):
+        if self.rect.collidepoint(x, y) and self.alive:
             self.alive = False
             self.hp -= 1
             return True
@@ -117,3 +125,22 @@ class Tank():
             self.lastShot = currentTime
             return bulletFactory.makeBullet(self.x, self.y, self.orientation, self)
         return False
+
+    def addPowerUp(self, type):
+        self.powerUp.append(type)
+
+    def consumePowerUp(self):
+        if len(self.powerUp) == 0:
+            return
+        powerUp = self.powerUp.pop()
+        self.powerUpTime = pygame.time.get_ticks()
+        if powerUp == 0:
+            self.speed = 20
+            self.activePowerUp = 0
+
+    def deactivatePowerUp(self):
+        now = pygame.time.get_ticks()
+        if now - self.powerUpTime > 4200 and self.activePowerUp != -1:
+            if self.activePowerUp == 0:
+                self.speed = 10
+                self.activePowerUp = -1

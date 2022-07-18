@@ -57,6 +57,7 @@ class Jumbotron():
         textRect = text.get_rect()
         textRect.center = (32*16, 21*32+32) 
         screen.blit(text, textRect)
+
     def loading(self, screen):
         text = self.font.render('Aguardando o outro jogador...', True,(255,255,255))
 

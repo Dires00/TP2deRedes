@@ -4,8 +4,12 @@ from src.tank import Tank
 import pygame, sys, pickle, time
 from src.map_def import Level
 from socket import *
+from src.powerup import PowerUp
 
 class Client():
+    """
+    Classe que representa o cliente
+    """
     def __init__(self, serverName: str, serverPort: int):
         self.clientSocket = socket(AF_INET, SOCK_STREAM)
         self.clientSocket.connect((serverName, serverPort))
@@ -83,7 +87,7 @@ def main(args):
         client.send(choice)
         jumbotron.loading(screen)
         pygame.display.update()
-        print(client.recv())
+        client.recv()
 
     else:
         choice = client.recv()
@@ -109,6 +113,8 @@ def main(args):
     
     pygame.mixer.music.fadeout(500)
 
+    powerUp = PowerUp()
+
     screen.fill((0, 0, 0))
     level.render(screen)        
     jumbotron.readyToGo(screen, level)
@@ -130,7 +136,7 @@ def main(args):
             enemyTank = redTank
         run = True
         while run:
-
+            
             kill = False
             death = False
             shot = False
@@ -159,6 +165,9 @@ def main(args):
                 if shot:
                     shotSound.play()
 
+            if keys[pygame.K_f] or keys[pygame.K_RETURN]:
+                myTank.consumePowerUp()
+
             screen.fill((0, 0, 0))
             level.render(screen)
 
@@ -166,8 +175,13 @@ def main(args):
             kill = enemyTank.render(screen)
             jumbotron.scoreBoard(redTank.getHp(), blueTank.getHp(), screen)
             
+            powerUp.render(screen)
+            powerUp.grabPowerUp(tanks)
             bulletFactory.renderBullets(screen, level, (myTank, enemyTank))
-            
+            place = -1
+            if player == 0:
+                place = powerUp.getPlace()
+
             if kill:
                 auxPosition = myTank.getInicialPosition()
                 myTank.reset(enemyTank.getInicialPosition())
@@ -187,11 +201,15 @@ def main(args):
             position = myTank.getPosition()
             message = position
             message.append(shot)
+            message.append(place)
             client.send(message)
 
             message = client.recv()
             position = message[:3]
             shot = message[3]
+            place = message[4]
+
+            powerUp.setLocation(place)
 
             enemyTank.setPosition(position)
 
@@ -210,15 +228,14 @@ def main(args):
         finalExplosionSound.play()
         pygame.display.update()
         time.sleep(5)
-        client.send([-1, -1, -1, False])
+        client.send([-1, -1, -1, False, -1])
 
     else:
         run = True
-        alive = tanks
-        wasAlive = alive
-        lenAlive = 4
+        alive = 4
+        wasAlive = 4
+        
         while run:
-
             shot = False
             pygame.time.delay(75)
             
@@ -244,17 +261,31 @@ def main(args):
                 shot = tanks[player].shoot(bulletFactory)
                 if shot:
                     shotSound.play()
+            if keys[pygame.K_f] or keys[pygame.K_RETURN]:
+                tanks[player].consumePowerUp()
 
             screen.fill((0, 0, 0))
             level.render(screen)
-    
-                
+
+            powerUp.render(screen)
+            powerUp.grabPowerUp(tanks)
+
+            place = -1
+            if player == 0:
+                place = powerUp.getPlace()
+
             jumbotron.bigScoreBoard(f'{tanks[0].getHp()}   :   {tanks[1].getHp()}   :   {tanks[2].getHp()}   :   {tanks[3].getHp()}', screen)
+            
+            bulletFactory.renderBullets(screen, level, tanks)
+
             alive = 0
             for tank in tanks:
                 if tank.isAlive():
                     tank.render(screen)
                     alive += 1
+
+            if wasAlive > alive:
+                lowerExplosionSound.play()
 
             if alive == 1:
                 auxPosition = tanks[0].getInicialPosition()
@@ -263,19 +294,22 @@ def main(args):
                         tank.reset(tanks[i+1].getInicialPosition())
                     else:
                         tank.reset(auxPosition)
+            
+                for tank in tanks:
+                    print(tank.getInicialPosition())
 
             position = tanks[player].getPosition()
             message = position
             message.append(shot)
+            message.append(place)
             client.send(message)
 
             message = client.recv()
-
             for i, information in enumerate(message):
-                if i != player:
+                if i != player and i != 4:
                     position = information[:3]
                     shot = information[3]
-                    tanks[i].setPosition(position)
+                    tanks[i].setPosition(position[:])
                     if shot:
                         tanks[i].shoot(bulletFactory)
 
@@ -286,9 +320,11 @@ def main(args):
 
             if alive == 1:
                 break
-            
-            bulletFactory.renderBullets(screen, level, tanks)
 
+            wasAlive = alive
+            place = message[4]
+            
+            powerUp.setLocation(place)
             pygame.display.update()
         
         if tanks[player].getHp() > 0:
